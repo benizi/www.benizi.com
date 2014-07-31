@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+<link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+<script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.7.0/moment.js"></script>
+<script>
+function displayWeather(data) {
+  _.each(data.forecast.txt_forecast.forecastday, function(v) {
+    var div = $('<div>').appendTo('#weather');
+    div.text(v.title);
+    div.append(' ');
+    div.append(v.fcttext);
+  });
+}
+
+function afterLocation(success, loc) {
+  if (!success) {
+    $('#location').text('FAILED TO FIND LOCATION');
+    return;
+  }
+  var lat = loc.coords.latitude;
+  var lon = loc.coords.longitude;
+  var req = $.ajax({
+    url: 'http://api.wunderground.com/api/0f628f407e7738ec/forecast/q/PA/Pittsburgh.json',
+    method: 'GET',
+    dataType: 'jsonp'
+  });
+  req.done(displayWeather);
+  req.done(storeWeather);
+}
+
+function findWeather() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      _.partial(afterLocation, true),
+      _.partial(afterLocation, false)
+    );
+  }
+}
+
+function displayTime() {
+  $('#time').text(moment().format('YYYY-MM-DD HH:mm:ss'));
+}
+
+function startTime() {
+  setInterval(displayTime, 100);
+}
+
+$(findWeather);
+$(startTime);
+</script>
+</head>
+<body>
+<div>
+<div id="time"></div>
+<div id="weather"></div>
+<div id="location"></div>
+</div>
+</body>
+</html>
