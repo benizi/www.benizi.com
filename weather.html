@@ -132,7 +132,7 @@ function displayTime() {
 function displayForecast(data) {
   var template = Handlebars.compile($('#wx-day').html());
   _.each(data.forecast.simpleforecast.forecastday, function(day) {
-    $('#weather').append(template(day));
+    $('#weather').html(template(day));
   });
 }
 
