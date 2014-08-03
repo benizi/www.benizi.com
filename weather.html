@@ -18,6 +18,7 @@ body {
 }
 #time { font-size: 3rem; }
 .celsius { font-size: 1.5rem; }
+#wunderground { display: none; }
 </style>
 
 <!-- Handlebars templates -->
@@ -143,6 +144,7 @@ function displayForecast(data) {
   _.each(data.forecast.simpleforecast.forecastday, function(day) {
     $('#weather').append(runTemplate('#wx-day', day));
   });
+  $('#wunderground').show();
 }
 
 function useOldForecast(loc) {
@@ -172,7 +174,7 @@ $(clock);
 <div class="container">
   <div id="time" class="row"></div>
   <div id="weather" class="row"></div>
-  <div class="row"><a href="https://wunderground.com/"><img src="wunderground-logo.png"></a></div>
+  <div id="wunderground" class="row"><a href="https://wunderground.com/"><img src="wunderground-logo.png"></a></div>
   <div id="location" class="row"></div>
 </div>
 </body>
