@@ -41,6 +41,17 @@ body {
 </div></script>
 
 <script>
+var Templates = {};
+
+function runTemplate(selector, context) {
+  if (!(selector in Templates)) {
+    var template = $(selector).html();
+    console.log(template);
+    Templates[selector] = Handlebars.compile(template);
+  }
+  if (selector in Templates) return Templates[selector](context);
+}
+
 function setVar(k, v) {
   var j = JSON.stringify(v);
   if (Modernizr.localstorage) localStorage.setItem(k, j);
@@ -78,8 +89,7 @@ function foundLocation(loc) {
 }
 
 function displayLocation(loc) {
-  var template = Handlebars.compile($('#lat-lon').html());
-  $('#location').html(template(loc));
+  $('#location').html(runTemplate('#lat-lon', loc));
 }
 
 function weatherKey(loc) {
@@ -120,20 +130,18 @@ function failedLocation(err) {
 
 function displayTime() {
   var now = moment();
-  var template = Handlebars.compile($('#date-time').html());
   var dateTime = {
     time: now.format('HH:mm:ss'),
     date: now.format('YYYY-MM-DD'),
     dow: now.format('dddd')
   };
-  $('#time').html(template(dateTime));
+  $('#time').html(runTemplate('#date-time', dateTime));
 }
 
 function displayForecast(data) {
-  var template = Handlebars.compile($('#wx-day').html());
   $('#weather').empty();
   _.each(data.forecast.simpleforecast.forecastday, function(day) {
-    $('#weather').append(template(day));
+    $('#weather').append(runTemplate('#wx-day', day));
   });
 }
 
