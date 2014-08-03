@@ -3,61 +3,166 @@
 <head>
 <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
 <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
-<link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+<link href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
 <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.7.0/moment.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.2/modernizr.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/1.3.0/handlebars.min.js"></script>
+
+<style>
+body {
+  color: #ccc;
+  background: black;
+  text-align: center;
+  font-size: 2rem;
+}
+#time { font-size: 3rem; }
+.celsius { font-size: 1.5rem; }
+</style>
+
+<!-- Handlebars templates -->
+<script id="wx-day" type="text/x-handlebars-template"><div class="col-xs-12 col-sm-3 day">
+<div class="row">
+<div class="col-xs-3 col-sm-12 col-md-12">{{date.weekday}}</div>
+<div class="col-xs-1 col-sm-6 col-md-12">{{high.fahrenheit}}<span class="celsius hidden-xs hidden-sm"> ({{high.celsius}})</span></div>
+<div class="col-xs-1 col-sm-6 col-md-12">{{low.fahrenheit}}<span class="celsius hidden-xs hidden-sm"> ({{low.celsius}})</span></div>
+<div class="col-xs-7 col-sm-12">{{conditions}}</div>
+</div>
+</div></script>
+
+<script id="date-time" type="text/x-handlebars-template"><div class="col-sm-12 datetime">
+<div class="row time">{{time}}</div>
+<div class="row date">{{date}}</div>
+<div class="row dow">{{dow}}</div>
+</div></script>
+
+<script id="lat-lon" type="text/x-handlebars-template"><div class="col-sm-12 location">
+<div class="row">{{coords.latitude}}, {{coords.longitude}}</div>
+</div></script>
+
 <script>
-function displayWeather(data) {
-  _.each(data.forecast.txt_forecast.forecastday, function(v) {
-    var div = $('<div>').appendTo('#weather');
-    div.text(v.title);
-    div.append(' ');
-    div.append(v.fcttext);
-  });
+function setVar(k, v) {
+  var j = JSON.stringify(v);
+  if (Modernizr.localstorage) localStorage.setItem(k, j);
+  else window[k] = j;
+  return j;
 }
 
-function afterLocation(success, loc) {
-  if (!success) {
-    $('#location').text('FAILED TO FIND LOCATION');
-    return;
-  }
+function getVar(k) {
+  return JSON.parse(Modernizr.localstorage ? localStorage.getItem(k)||"null" : window[k]);
+}
+
+function setVarCached(k, v) {
+  setVar(k + ':stored', (new Date).valueOf());
+  return setVar(k, v);
+}
+
+function getVarCached(k, limit /* in milliseconds */) {
+  var cached = getVar(k + ':stored');
+  if (cached && ((new Date) - new Date(parseInt(cached))) < limit) return getVar(k);
+  return null;
+}
+
+function locationKey(loc) {
   var lat = loc.coords.latitude;
   var lon = loc.coords.longitude;
+  return _.map([lat, lon], function(n) {
+    return Math.round(n * 10);
+  }).join(',');
+}
+
+function foundLocation(loc) {
+  setVarCached('loc', loc);
+  displayLocation(loc);
+  loadWeather(loc);
+}
+
+function displayLocation(loc) {
+  var template = Handlebars.compile($('#lat-lon').html());
+  $('#location').html(template(loc));
+}
+
+function weatherKey(loc) {
+  return ['wx', locationKey(loc)].join(':');
+}
+
+function loadWeather(loc) {
+  var wx = getVarCached(weatherKey(loc), /* 30 min */ 1800000);
+  if (wx) displayForecast(wx);
+  else fetchWeather(loc);
+}
+
+function fetchWeather(loc) {
+  var wunderground = 'http://api.wunderground.com/api/0f628f407e7738ec';
+  var lat = loc.coords.latitude;
+  var lon = loc.coords.longitude;
+  var url = wunderground + '/forecast/q/' + lat + ',' + lon + '.json';
   var req = $.ajax({
-    url: 'http://api.wunderground.com/api/0f628f407e7738ec/forecast/q/PA/Pittsburgh.json',
+    url: url,
     method: 'GET',
     dataType: 'jsonp'
   });
-  req.done(displayWeather);
-  req.done(storeWeather);
+  req.done(displayForecast);
+  req.done(_.partial(storeWeather, loc));
+  req.fail(_.partial(useOldForecast, loc));
 }
 
-function findWeather() {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      _.partial(afterLocation, true),
-      _.partial(afterLocation, false)
-    );
-  }
+function storeWeather(loc, wx) {
+  setVarCached(weatherKey(loc), wx);
+}
+
+function failedLocation(err) {
+  var msg = 'Failed to determine location';
+  if (_.isString(err)) msg += ': ' + err;
+  else if (err) msg += ': an error occurred';
+  $('#location').text(msg);
 }
 
 function displayTime() {
-  $('#time').text(moment().format('YYYY-MM-DD HH:mm:ss'));
+  var now = moment();
+  var template = Handlebars.compile($('#date-time').html());
+  var dateTime = {
+    time: now.format('HH:mm:ss'),
+    date: now.format('YYYY-MM-DD'),
+    dow: now.format('dddd')
+  };
+  $('#time').html(template(dateTime));
 }
 
-function startTime() {
+function displayForecast(data) {
+  var template = Handlebars.compile($('#wx-day').html());
+  _.each(data.forecast.simpleforecast.forecastday, function(day) {
+    $('#weather').append(template(day));
+  });
+}
+
+function useOldForecast(loc) {
+  var wx = getVar(weatherKey(loc));
+  if (wx) {
+    displayForecast(wx);
+  } else {
+    $('#weather').text("Couldn't fetch weather");
+  }
+}
+
+function clock() {
   setInterval(displayTime, 100);
 }
 
-$(findWeather);
-$(startTime);
+function forecast() {
+  if (!Modernizr.geolocation) failedLocation('not supported');
+  navigator.geolocation.getCurrentPosition(foundLocation, failedLocation);
+}
+
+$(forecast);
+$(clock);
 </script>
 </head>
 <body>
-<div>
-<div id="time"></div>
-<div id="weather"></div>
-<div id="location"></div>
+<div class="container">
+  <div id="time" class="row"></div>
+  <div id="weather" class="row"></div>
+  <div id="location" class="row"></div>
 </div>
 </body>
 </html>
