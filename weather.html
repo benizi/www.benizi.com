@@ -105,7 +105,7 @@ function loadWeather(loc) {
 }
 
 function fetchWeather(loc) {
-  var wunderground = 'http://api.wunderground.com/api/0f628f407e7738ec';
+  var wunderground = '//api.wunderground.com/api/0f628f407e7738ec';
   var lat = loc.coords.latitude;
   var lon = loc.coords.longitude;
   var url = wunderground + '/forecast/q/' + lat + ',' + lon + '.json';
