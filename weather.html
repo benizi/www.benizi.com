@@ -20,6 +20,7 @@ body {
 .time { font-size: 6rem; }
 .celsius { font-size: 1.5rem; }
 #wunderground { display: none; }
+.clickable { cursor: pointer; }
 </style>
 
 <!-- Handlebars templates -->
@@ -39,7 +40,7 @@ body {
 </div></script>
 
 <script id="lat-lon" type="text/x-handlebars-template"><div class="col-sm-12 location">
-<div class="row">{{coords.latitude}}, {{coords.longitude}}</div>
+<div class="row clickable" onclick="nameLocation()">{{coords.latitude}}, {{coords.longitude}}</div>
 </div></script>
 
 <script>
@@ -168,6 +169,28 @@ function forecast() {
   navigator.geolocation.getCurrentPosition(foundLocation, failedLocation);
 }
 
+function nameLocation() {
+  var url = 'https://maps.googleapis.com/maps/api/geocode/json';
+  var loc = getVar('loc');
+  var req = $.ajax({
+    url: url,
+    method: 'GET',
+    dataType: 'json',
+    data: {
+      latlng: [
+        loc.coords.latitude,
+        loc.coords.longitude
+      ].join(','),
+      key: 'AIzaSyCR2ugV6iF5DThbUUDMCgQStzNMk5V1QsE'
+    }
+  });
+  req.done(gotLocationName);
+}
+
+function gotLocationName(data) {
+  $('#location-name').text(data.results[0].formatted_address);
+}
+
 $(forecast);
 $(clock);
 </script>
@@ -178,6 +201,7 @@ $(clock);
   <div id="weather" class="row"></div>
   <div id="wunderground" class="row"><a href="https://wunderground.com/"><img src="wunderground-logo.png"></a></div>
   <div id="location" class="row"></div>
+  <div id="location-name" class="row"></div>
 </div>
 </body>
 </html>
