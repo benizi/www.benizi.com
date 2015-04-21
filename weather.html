@@ -126,6 +126,7 @@ function storeWeather(loc, wx) {
 function failedLocation(err) {
   var msg = 'Failed to determine location';
   if (_.isString(err)) msg += ': ' + err;
+  else if ('message' in err) msg += ': ' + err.message;
   else if (err) msg += ': an error occurred';
   $('#location').text(msg);
 }
