@@ -159,9 +159,19 @@ function useOldForecast(loc) {
   }
 }
 
+function setIntervalWithExpiration(callback, frequency, expiration) {
+  var end = new Date(new Date().getTime() + expiration);
+  var interval;
+  interval = setInterval(function() {
+    if (new Date() > end) clearInterval(interval);
+    else callback();
+  }, frequency);
+  return interval;
+}
+
 function clock() {
   displayTime();
-  setInterval(displayTime, 1000);
+  setIntervalWithExpiration(displayTime, 100, 10000);
 }
 
 function forecast() {
