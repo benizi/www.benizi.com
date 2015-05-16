@@ -201,8 +201,46 @@ function gotLocationName(data) {
   $('#location-name').text(data.results[0].formatted_address);
 }
 
+var Countdown = function(name, date) {
+  this.name = name;
+  this.stop = new Date(date);
+  return this;
+};
+
+Countdown.prototype.timer = function() {
+  var now = (new Date).getTime();
+  var diff = this.stop.getTime() - now;
+  var parts = [];
+  var sinceago = diff > 0 ? 'to go' : 'ago';
+  diff = Math.abs(diff);
+  var sofar = 1;
+  var segments = [
+    ['second', 1000],
+    ['minute', 60],
+    ['hour', 60],
+    ['day', 24],
+    ['week', 7]
+  ].map(function(name_duration) {
+    sofar *= name_duration[1];
+    return {name:name_duration[0], time:sofar};
+  }).reverse();
+
+  segments.forEach(function(segment) {
+    var count = Math.floor(diff / segment.time);
+    parts.push('' + count + segment.name.substr(0,1));
+    diff -= count * segment.time;
+  });
+  $('#countdown').text(this.name + ': ' + parts.join(':') + ' ' + sinceago);
+};
+
+function countdown() {
+  var dv = new Countdown('Deer Valley', '2015-06-20T11:00:00');
+  setIntervalWithExpiration(function() { dv.timer() }, 100, 5000);
+}
+
 $(forecast);
 $(clock);
+$(countdown);
 </script>
 </head>
 <body>
@@ -212,6 +250,7 @@ $(clock);
   <div id="wunderground" class="row"><a href="https://wunderground.com/"><img src="wunderground-logo.png"></a></div>
   <div id="location" class="row"></div>
   <div id="location-name" class="row"></div>
+  <div id="countdown" class="row"></div>
 </div>
 </body>
 </html>
