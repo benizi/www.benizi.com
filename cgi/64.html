@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      #clear {
+        display: none;
+        position: fixed;
+        left: 0;
+        bottom: 0;
+      }
+    </style>
+    <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+    <script src="//cdn.rawgit.com/google/closure-library/master/closure/goog/base.js"></script>
+    <script>
+      goog.require('goog.math.Long');
+    </script>
+    <script src="util.js"></script>
+    <script src="md5.js"></script>
+    <script src="base64.js"></script>
+    <script src="blowfish.js"></script>
+    <script src="cbc.js"></script>
+    <script src="crand.js"></script>
+    <script src="64.encrypted.js"></script>
+    <script src="decrypt.js"></script>
+    <script>
+      $(function() {
+        var activate = function(source) {
+          eval(source);
+          $('#decrypt').remove();
+          $('#clear').show();
+          $('#input').attr('disabled', false);
+          $('#input').focus();
+        };
+
+        var tryCached = function() {
+          if (!localStorage) return;
+          var source = localStorage.getItem(location.href);
+          if (source) activate(source);
+        };
+        tryCached();
+
+        $(document).on('click', '#clearcache', function(e) {
+          if (localStorage) localStorage.removeItem(location.href);
+        });
+
+        $(document).on('change', '#decrypt', function(e) {
+          var data = benizi.decrypt(benizi.source, $(e.target).val());
+          $('#input').attr('disabled', !!!data.success);
+          if (!data.success) { console.log('Fail'); return; }
+          activate(data.data);
+          if (localStorage) localStorage.setItem(location.href, data.data);
+        });
+
+        $(document).on('click focus', 'input.o', function(e) {
+          $(e.target).select();
+        });
+
+        $(document).on('keyup change', '#input', function(e) {
+          $('#out .o').remove();
+          $.each(benizi.outs($('#input').val()),
+            function(_i, out) {
+              var div = $('<div>');
+              $('<input type="text">').addClass('o').val(out).appendTo(div);
+              $('#out').append(div);
+            });
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <div id="clear"><input id="clearcache" type="button" value="Clear" /></div>
+    <div>
+      <input id="decrypt" placeholder="pass" />
+      <input id="input" placeholder="input" disabled="true" />
+    </div>
+    <div id="out"></div>
+  </body>
+</html>
