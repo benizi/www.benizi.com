@@ -8,6 +8,10 @@
         left: 0;
         bottom: 0;
       }
+      #http {
+        color: red;
+        font-size: 200%;
+      }
     </style>
     <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
     <script src="//cdn.rawgit.com/google/closure-library/master/closure/goog/base.js"></script>
@@ -39,6 +43,8 @@
         };
         tryCached();
 
+        if (location.protocol == 'https:') $('#http').hide();
+
         $(document).on('click', '#clearcache', function(e) {
           if (localStorage) localStorage.removeItem(location.href);
         });
@@ -68,6 +74,7 @@
     </script>
   </head>
   <body>
+    <div id="http"><a href="https://www.benizi.com/cgi/64">Use HTTPS!</a></div>
     <div id="clear"><input id="clearcache" type="button" value="Clear" /></div>
     <div>
       <input id="decrypt" placeholder="pass" />
