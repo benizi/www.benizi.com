@@ -233,9 +233,14 @@ Countdown.prototype.timer = function() {
   $('#countdown').text(this.name + ': ' + parts.join(':') + ' ' + sinceago);
 };
 
+function countdownTo(what, when) {
+  var ev = new Countdown(what, when);
+  setIntervalWithExpiration(function() { ev.timer() }, 100, 5000);
+}
+
 function countdown() {
-  var dv = new Countdown('Deer Valley', '2015-06-20T11:00:00');
-  setIntervalWithExpiration(function() { dv.timer() }, 100, 5000);
+  countdownTo('Deer Valley', '2015-06-20T11:00:00');
+  countdownTo('Photo Booth', '2015-06-05T13:00:00');
 }
 
 $(forecast);
