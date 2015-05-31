@@ -207,6 +207,10 @@ var Countdown = function(name, date) {
   return this;
 };
 
+Countdown.prototype.id = function() {
+  return 'countdown-' + this.name.replace(/ /g, '-').toLowerCase();
+};
+
 Countdown.prototype.timer = function() {
   var now = (new Date).getTime();
   var diff = this.stop.getTime() - now;
@@ -230,7 +234,11 @@ Countdown.prototype.timer = function() {
     parts.push('' + count + segment.name.substr(0,1));
     diff -= count * segment.time;
   });
-  $('#countdown').text(this.name + ': ' + parts.join(':') + ' ' + sinceago);
+  var selector = '#' + this.id();
+  if (!$(selector).length) {
+    $('<div>').attr('id', this.id()).appendTo('#countdown');
+  }
+  $(selector).text(this.name + ': ' + parts.join(':') + ' ' + sinceago);
 };
 
 function countdownTo(what, when) {
